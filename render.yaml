@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: raja-raja-chora-parchi-wala-game
+    env: node
+    plan: free
+    buildCommand: npm --prefix server install
+    startCommand: node server/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
