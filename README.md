@@ -62,15 +62,17 @@ raja-rani-mantri-chor-sipahi/
 ├── LICENSE                    # MIT
 ├── package.json               # root scripts: npm test / npm run server
 ├── .gitignore
+├── render.yaml              # Render free-tier web service (build/start commands)
 ├── server/
-│   ├── package.json           # express + socket.io
+│   ├── package.json           # express + socket.io (socket.io-client is a dev dep, for the online test)
 │   ├── server.js              # Express + Socket.IO, rooms, bots, reconnect, host transfer
 │   ├── game.js                # PURE game engine (no I/O) — unit-testable
-│   └── test-game.js           # node test-game.js — full-round simulation
+│   ├── test-game.js           # node test-game.js — full-round simulation
+│   └── test-online.js         # node test-online.js — 2-client create/join/guess/rejoin test
 ├── client/
-│   ├── index.html             # lobby / game / round / final screens
+│   ├── index.html             # lobby (Create / Join / Solo) / game / round / final screens
 │   ├── styles.css             # notebook paper, turmeric/maroon/cream, mobile-first
-│   └── app.js                 # playable solo client (local engine mirrors game.js)
+│   └── app.js                 # solo engine + Socket.IO online client (same UI)
 └── docs/
     └── STATE_DIAGRAM.md       # state machine (Mermaid) + events + edge cases
 ```
@@ -109,11 +111,42 @@ npm test
    roles to any client (`game.getPublicState()` — see `server/game.js`),
    so inspecting network traffic or the client cannot reveal other slips.
 
-> The plain-HTML client in this repo is the solo build. The Socket.IO
-> client wiring lives in `server/server.js` (events listed in
-> `docs/STATE_DIAGRAM.md`); point the client at the server URL to play
-> across devices. A React + Vite frontend can be dropped in later without
-> changing `server/game.js` — the engine is transport-independent.
+## Play online with friends (Create / Join)
+
+The client (`client/app.js`) is a full Socket.IO client — no separate
+frontend build is needed. Open the lobby and pick one of the three modes:
+
+- **🏠 Create Room** — enter your name and avatar, set players (5–10),
+  rounds, house rules and the points table, then tap **Create room**.
+  The server gives you a real 5-letter room code (e.g. `FMSJS`) and a
+  shareable invite link (`?room=FMSJS`). You are the host: add bots to
+  fill empty seats, then tap **Start game**.
+- **🔑 Join Room** — enter your name and avatar and the 5-letter code
+  from your friend, then tap **Join room**. A wrong code, a full room,
+  or a game that already started shows a clear error. Opening an invite
+  link (`?room=FMSJS`) pre-fills Join mode with that code automatically.
+- **🤖 Solo with bots** — the old practice mode, unchanged: everything
+  runs locally in your browser, no server needed.
+
+While you play online, everything comes from the server: your slip shows
+only your own role, the guessing chain and leaderboard come from server
+`state` events, guesses go out as `make_guess`, and chat goes out as
+`chat`. If you reload mid-game, the client restores your seat with
+`rejoin_room` (room code + player ID are kept in `sessionStorage`).
+If the server is unreachable or the Socket.IO CDN fails to load, the
+online buttons say so clearly and Solo mode keeps working.
+
+Events used (exact names from `server/server.js`, see
+`docs/STATE_DIAGRAM.md`): `create_room`, `join_room`, `rejoin_room`,
+`add_bots`, `update_settings`, `start_game`, `make_guess`, `next_round`,
+`play_again`, `chat` — and server emits `state`, `guess_result`,
+`round_end`, `game_end`, `draw_slip`, `chat`. A React + Vite frontend
+can be dropped in later without changing `server/game.js` — the engine
+is transport-independent.
+
+**Test it locally:** `cd server && npm install && npm run test:online`
+spawns the server and drives two real clients through create → join →
+bots → start → guesses → rejoin.
 
 ## Deployment
 
