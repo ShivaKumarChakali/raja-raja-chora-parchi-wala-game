@@ -6,6 +6,9 @@
 <title>Raja Rani Mantri Chor Sipahi — Paper Slip Game</title>
 <meta name="description" content="The classic Indian childhood paper-slip game for 5–10 players. Play solo with bots or with friends.">
 <link rel="stylesheet" href="styles.css">
+<!-- Socket.IO client (online multiplayer). If this CDN fails, the page
+     still works in Solo mode — online buttons will say so clearly. -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
 <canvas id="confetti" class="hidden"></canvas>
@@ -24,7 +27,29 @@
   <!-- ============ LOBBY ============ -->
   <section id="screen-lobby" class="card paper">
     <h2>🏠 Lobby — make your room</h2>
-    <div class="grid2">
+    <p class="center"><span class="pill" id="onlineStatus">● Solo practice — no server needed</span></p>
+    <div class="modetabs" role="tablist">
+      <button class="modetab" id="tabCreate" type="button">🏠 Create Room</button>
+      <button class="modetab" id="tabJoin" type="button">🔑 Join Room</button>
+      <button class="modetab sel" id="tabSolo" type="button">🤖 Solo with bots</button>
+    </div>
+    <p class="muted center" id="modeHint">Practice alone against bots — runs entirely in this browser.</p>
+
+    <!-- Join a friend's room (online) -->
+    <div id="joinPanel" class="card hidden" style="margin:.5rem 0">
+      <h3>🔑 Join a friend's room</h3>
+      <label>Room code (5 letters)<br>
+        <input id="joinCode" class="joincode" maxlength="5" placeholder="ABCDE" autocomplete="off" style="text-transform:uppercase">
+      </label>
+      <div class="row" style="margin-top:.6rem">
+        <button class="btn primary" id="joinBtn" type="button">▶ Join room</button>
+        <span class="muted">Ask the host for the code, or open their invite link — it fills this in for you.</span>
+      </div>
+      <p class="error hidden" id="joinError"></p>
+      <p class="muted">Server: <input id="serverUrl" style="width:min(100%,340px)" value=""> <span class="muted">(usually this page's own address — change only if you run the server elsewhere)</span></p>
+    </div>
+
+    <div class="grid2" id="settingsGrid">
       <div>
         <label>Your name<br><input id="myName" value="Shiva" maxlength="20" style="width:100%"></label>
         <p><label>Pick an avatar</label></p>
@@ -34,9 +59,7 @@
           <button class="btn ghost" id="copyLink" type="button">📋 Copy link</button>
           <button class="btn ghost" id="newCode" type="button">🔀 New code</button>
         </p>
-        <p class="muted">Solo mode runs entirely in this browser with bots. For real friends on
-        different phones, run the server — see README. The room code above is the
-        code they will type after you start <code>node server/server.js</code>.</p>
+        <p class="muted" id="roomHint">Solo mode runs entirely in this browser with bots. To play online with friends, use <b>Create Room</b> above — the server gives you a real code to share.</p>
       </div>
       <div>
         <div class="toggle"><span>Players (5–10)</span>
@@ -55,9 +78,11 @@
       </div>
     </div>
     <div class="row" style="margin-top:1rem">
+      <button class="btn primary" id="createRoomBtn" type="button">🏠 Create room</button>
       <button class="btn primary" id="startBtn" type="button">▶ Start game — draw slips!</button>
       <button class="btn" id="addBotBtn" type="button">🤖 Add a bot</button>
       <span class="pill" id="lobbyCount">1 / 5 players</span>
+      <span class="muted" id="waitingHint"></span>
     </div>
     <h3>Players in the room</h3>
     <div class="table" id="lobbyPlayers"></div>

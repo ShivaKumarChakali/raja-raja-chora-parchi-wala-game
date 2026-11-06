@@ -111,6 +111,11 @@ table.score th{background:#ffe9a8}
 .modal td,.modal th{border-bottom:1px solid var(--line); padding:.35rem}
 #confetti{position:fixed; inset:0; pointer-events:none; z-index:40}
 .toast{background:var(--maroon); color:#ffe9a8; padding:.6rem 1rem; border-radius:999px; text-align:center; font-weight:700; margin:.5rem 0}
+.modetabs{display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; margin:.6rem 0}
+.modetab{background:#fff; border:2px solid var(--line); border-radius:999px; padding:.6rem 1rem; font-weight:800; font-size:1rem}
+.modetab.sel{background:var(--maroon); color:#ffe9a8; border-color:var(--maroon-d)}
+.joincode{font-size:1.6rem; letter-spacing:.35em; text-align:center; font-weight:900; width:12ch}
+.error{color:var(--red); font-weight:700; background:#ffcdd2; border-radius:10px; padding:.5rem .7rem}
 .points-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:.5rem}
 .points-grid label{display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid var(--line); border-radius:8px; padding:.4rem .6rem}
 .points-grid input{width:70px}
