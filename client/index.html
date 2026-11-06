@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Raja Rani Mantri Chor Sipahi — Paper Slip Game</title>
+<meta name="description" content="The classic Indian childhood paper-slip game for 5–10 players. Play solo with bots or with friends.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="confetti" class="hidden"></canvas>
+
+<header class="topbar">
+  <h1>👑 Raja Rani Mantri Chor Sipahi</h1>
+  <button id="langBtn" type="button">हिन्दी</button>
+  <button id="soundBtn" type="button" title="Sound on/off">🔊 Sound</button>
+  <button id="howBtn" type="button">❓ How to play</button>
+</header>
+
+<main class="wrap">
+  <p class="center muted">The paper-slip game from school lunch breaks — now on your phone. No download, no sign-up.</p>
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ============ LOBBY ============ -->
+  <section id="screen-lobby" class="card paper">
+    <h2>🏠 Lobby — make your room</h2>
+    <div class="grid2">
+      <div>
+        <label>Your name<br><input id="myName" value="Shiva" maxlength="20" style="width:100%"></label>
+        <p><label>Pick an avatar</label></p>
+        <div class="avatars" id="avatars"></div>
+        <p style="margin-top:1rem"><label>Room code (share it with friends)</label><br>
+          <span class="pill" id="roomCode">—</span>
+          <button class="btn ghost" id="copyLink" type="button">📋 Copy link</button>
+          <button class="btn ghost" id="newCode" type="button">🔀 New code</button>
+        </p>
+        <p class="muted">Solo mode runs entirely in this browser with bots. For real friends on
+        different phones, run the server — see README. The room code above is the
+        code they will type after you start <code>node server/server.js</code>.</p>
+      </div>
+      <div>
+        <div class="toggle"><span>Players (5–10)</span>
+          <span class="stepper"><button id="pcMinus" type="button">−</button><b id="pcVal">5</b><button id="pcPlus" type="button">+</button></span>
+        </div>
+        <div class="toggle"><span>Rounds</span>
+          <select id="roundsSel"><option value="5">5 rounds</option><option value="10" selected>10 rounds</option><option value="15">15 rounds</option></select>
+        </div>
+        <div class="toggle"><span>👥 Two Thieves <span class="muted">(8+ players only)</span></span><button class="switch" id="twoThieves" type="button" aria-label="Two thieves"></button></div>
+        <div class="toggle"><span>➖ Wrong-guess penalty</span>
+          <select id="penaltySel"><option value="0" selected>None</option><option value="5">−5 points</option><option value="10">−10 points</option></select>
+        </div>
+        <div class="toggle"><span>Fill empty seats with bots</span><button class="switch on" id="fillBots" type="button" aria-label="Fill with bots"></button></div>
+        <details><summary><b>✏️ Points table (editable)</b></summary><div class="points-grid" id="pointsGrid"></div></details>
+        <details><summary><b>✏️ Role names (your family variant)</b></summary><div id="nameEditor" class="muted">Edit any name — it is used everywhere in the game.</div></details>
+      </div>
+    </div>
+    <div class="row" style="margin-top:1rem">
+      <button class="btn primary" id="startBtn" type="button">▶ Start game — draw slips!</button>
+      <button class="btn" id="addBotBtn" type="button">🤖 Add a bot</button>
+      <span class="pill" id="lobbyCount">1 / 5 players</span>
+    </div>
+    <h3>Players in the room</h3>
+    <div class="table" id="lobbyPlayers"></div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="screen-game" class="hidden">
+    <div class="card">
+      <div class="row">
+        <span class="pill" id="roundPill">Round 1 / 10</span>
+        <span class="pill green" id="turnPill">King's turn</span>
+        <span class="pill" id="scorePill">You: 0 pts</span>
+        <span style="flex:1"></span>
+        <button class="btn ghost" id="leaveBtn" type="button">🚪 Leave (bot takes over)</button>
+      </div>
+      <h3>🔍 The guessing chain</h3>
+      <div class="chain" id="chain"></div>
+      <p id="turnText" class="center"><b>King, find the Queen!</b></p>
+    </div>
+
+    <div class="card paper center">
+      <h3>🗒️ Your slip — tap to unfold</h3>
+      <div class="slip folded shuffling" id="mySlip" role="button" tabindex="0">
+        <div class="big" id="slipEmoji">🗒️</div>
+        <div class="role-name" id="slipName">Folded slip</div>
+        <div class="role-hi" id="slipHi">Tap to open</div>
+        <div class="muted" id="slipPts"></div>
+      </div>
+      <p class="muted">Only you can see this. In the real multiplayer server, hidden roles are never sent to other players.</p>
+    </div>
+
+    <div class="card">
+      <h3>🪑 Players at the table — tap a player to guess</h3>
+      <div class="table" id="gameTable"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card"><h3>📜 What happened</h3><div class="log" id="gameLog"></div></div>
+      <div class="card">
+        <h3>💬 Chat &amp; reactions</h3>
+        <div class="log" id="chatLog"><div>👋 Say hi! Emoji reactions appear here.</div></div>
+        <div class="chatbox" style="margin-top:.5rem">
+          <input id="chatInput" maxlength="200" placeholder="Type a message…">
+          <button class="btn" id="chatSend" type="button">Send</button>
+        </div>
+        <div class="emojirow" id="emojiRow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROUND SUMMARY ============ -->
+  <section id="screen-round" class="card hidden">
+    <h2 id="roundTitle">Round 1 over!</h2>
+    <div id="roundTable"></div>
+    <h3>🏆 Leaderboard</h3>
+    <div id="leaderboard"></div>
+    <div class="row"><button class="btn primary" id="nextRoundBtn" type="button">▶ Next round</button></div>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section id="screen-final" class="card hidden center">
+    <div class="bigwin">🎉🏆🎉</div>
+    <h2 id="winnerTitle">Winner!</h2>
+    <p id="winnerSub" class="muted"></p>
+    <div id="finalTable"></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" id="playAgainBtn" type="button">🔁 Play again</button>
+      <button class="btn" id="backLobbyBtn" type="button">🏠 Back to lobby</button>
+    </div>
+  </section>
+</main>
+
+<!-- How to play modal -->
+<div id="howModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="box">
+    <h2>❓ How to play</h2>
+    <p><b>1. Draw a slip.</b> Every round the paper slips are shuffled. You see <i>only your own</i> role. Only the <b>King</b> is revealed at the start.</p>
+    <p><b>2. Follow the chain.</b> King finds Queen → Queen finds Minister → … → Police finds Thief. Tap a player to guess they hold the next role.</p>
+    <p><b>3. Wrong guess?</b> You and the player you guessed <b>swap slips</b>. The new holder of your role tries again. Wrong guesses cost points if the penalty is on.</p>
+    <p><b>4. Round ends</b> when the Police correctly finds the Thief. Points are for your <i>final</i> role after all swaps. Thief always scores 0.</p>
+    <p><b>5. Game:</b> <span id="howRounds">10</span> rounds. Highest total wins. A tie at the end means one tie-breaker round.</p>
+    <h3>Roles for <span id="howCount">5</span> players</h3>
+    <table id="howTable"><thead><tr><th>#</th><th>Role</th><th>Points</th></tr></thead><tbody></tbody></table>
+    <p class="muted">Police and Thief are always the last two roles. With 8+ players you can turn on Two Thieves — then the Police must find both.</p>
+    <div class="row"><button class="btn primary" id="howClose" type="button">Got it!</button></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
